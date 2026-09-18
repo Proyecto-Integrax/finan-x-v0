@@ -335,6 +335,140 @@ export const products: Product[] = [
   },
 ]
 
+/* ------------------------------------------------------------------ */
+/* MÓDULO 3 · PEDIDOS                                                  */
+/* ------------------------------------------------------------------ */
+
+export type PedidoStatus = "BORRADOR" | "CONFIRMADO" | "FACTURADO" | "PAGADO" | "CANCELADO"
+
+export const pedidoStatuses: PedidoStatus[] = [
+  "BORRADOR",
+  "CONFIRMADO",
+  "FACTURADO",
+  "PAGADO",
+  "CANCELADO",
+]
+
+export interface OrderLine {
+  productId: string
+  code: string
+  name: string
+  category: ProductCategory
+  price: number
+  /** IVA percentage applied to this line. */
+  iva: number
+  quantity: number
+}
+
+export interface Pedido {
+  id: string
+  clientId: string
+  clientName: string
+  clientNit: string
+  createdAt: string
+  status: PedidoStatus
+  lines: OrderLine[]
+  invoiceId?: string
+  cancelReason?: string
+  cancelledAt?: string
+}
+
+export interface OrderTotals {
+  subtotal: number
+  iva: number
+  total: number
+}
+
+export function orderTotals(lines: OrderLine[]): OrderTotals {
+  const subtotal = lines.reduce((s, l) => s + l.price * l.quantity, 0)
+  const iva = lines.reduce((s, l) => s + l.price * l.quantity * (l.iva / 100), 0)
+  return { subtotal, iva, total: subtotal + iva }
+}
+
+/** Build an order line from a seed product id and quantity. */
+function line(productId: string, quantity: number): OrderLine {
+  const p = products.find((x) => x.id === productId)!
+  return {
+    productId: p.id,
+    code: p.code,
+    name: p.name,
+    category: p.category,
+    price: p.price,
+    iva: p.iva,
+    quantity,
+  }
+}
+
+export const pedidos: Pedido[] = [
+  {
+    id: "PED-00123",
+    clientId: "c1",
+    clientName: "Comercializadora Andina S.A.S.",
+    clientNit: "900123456-7",
+    createdAt: "2026-09-12",
+    status: "BORRADOR",
+    lines: [line("p1", 2), line("p5", 4)],
+  },
+  {
+    id: "PED-00122",
+    clientId: "c4",
+    clientName: "Tecnología Global Corp.",
+    clientNit: "800567123-9",
+    createdAt: "2026-09-10",
+    status: "CONFIRMADO",
+    lines: [line("p4", 3), line("p6", 1)],
+  },
+  {
+    id: "PED-00121",
+    clientId: "c2",
+    clientName: "Logística del Pacífico Ltda.",
+    clientNit: "830098765-1",
+    createdAt: "2026-09-05",
+    status: "FACTURADO",
+    invoiceId: "FAC-2044",
+    lines: [line("p2", 5), line("p1", 1)],
+  },
+  {
+    id: "PED-00120",
+    clientId: "c5",
+    clientName: "Agroindustrias del Llano S.A.S.",
+    clientNit: "901889002-4",
+    createdAt: "2026-08-28",
+    status: "PAGADO",
+    invoiceId: "FAC-2039",
+    lines: [line("p7", 1)],
+  },
+  {
+    id: "PED-00119",
+    clientId: "c1",
+    clientName: "Comercializadora Andina S.A.S.",
+    clientNit: "900123456-7",
+    createdAt: "2026-08-20",
+    status: "CANCELADO",
+    cancelReason: "El cliente solicitó anular el pedido por cambio de presupuesto.",
+    cancelledAt: "2026-08-22",
+    lines: [line("p4", 2)],
+  },
+  {
+    id: "PED-00118",
+    clientId: "c4",
+    clientName: "Tecnología Global Corp.",
+    clientNit: "800567123-9",
+    createdAt: "2026-08-14",
+    status: "PAGADO",
+    invoiceId: "FAC-2031",
+    lines: [line("p6", 2), line("p5", 6)],
+  },
+]
+
+export function nextPedidoId(existing: Pedido[]): string {
+  const max = existing.reduce((m, p) => {
+    const n = Number.parseInt(p.id.replace(/\D/g, ""), 10)
+    return Number.isNaN(n) ? m : Math.max(m, n)
+  }, 0)
+  return `PED-${String(max + 1).padStart(5, "0")}`
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("es-CO", {
     style: "currency",

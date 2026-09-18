@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 const modules = [
   { id: "m1", label: "Clientes", icon: Users, enabled: true },
   { id: "m2", label: "Productos", icon: Package, enabled: true },
-  { id: "m3", label: "Pedidos", icon: ShoppingCart, enabled: false },
+  { id: "m3", label: "Pedidos", icon: ShoppingCart, enabled: true },
   { id: "m4", label: "Facturación", icon: FileText, enabled: false },
   { id: "m5", label: "Pagos", icon: CreditCard, enabled: false },
   { id: "m6", label: "Reportes", icon: BarChart3, enabled: false },

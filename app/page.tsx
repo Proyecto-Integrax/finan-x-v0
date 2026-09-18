@@ -4,11 +4,25 @@ import { useState } from "react"
 import { Sidebar } from "@/components/finanx/sidebar"
 import { ClientsModule } from "@/components/finanx/clients-module"
 import { ProductsModule } from "@/components/finanx/products-module"
+import { OrdersModule } from "@/components/finanx/orders-module"
 import { ToastProvider } from "@/components/finanx/toast"
 
 function App() {
   const [collapsed, setCollapsed] = useState(false)
-  const [activeModule, setActiveModule] = useState("m2")
+  const [activeModule, setActiveModule] = useState("m3")
+
+  const renderModule = () => {
+    switch (activeModule) {
+      case "m1":
+        return <ClientsModule />
+      case "m2":
+        return <ProductsModule />
+      case "m3":
+        return <OrdersModule />
+      default:
+        return <ProductsModule />
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -19,7 +33,7 @@ function App() {
         onNavigate={setActiveModule}
       />
 
-      {activeModule === "m1" ? <ClientsModule /> : <ProductsModule />}
+      {renderModule()}
     </div>
   )
 }

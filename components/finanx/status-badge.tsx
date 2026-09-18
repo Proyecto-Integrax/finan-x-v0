@@ -40,6 +40,29 @@ export function OrderStatusBadge({ status }: { status: string }) {
   )
 }
 
+const pedidoStatusStyles: Record<string, { label: string; cls: string }> = {
+  BORRADOR: { label: "Borrador", cls: "bg-muted text-muted-foreground ring-border" },
+  CONFIRMADO: { label: "Confirmado", cls: "bg-primary/10 text-primary ring-primary/20" },
+  FACTURADO: { label: "Facturado", cls: "bg-success/10 text-success ring-success/20" },
+  PAGADO: { label: "Pagado", cls: "bg-success/10 text-success ring-success/20" },
+  CANCELADO: { label: "Cancelado", cls: "bg-destructive/10 text-destructive ring-destructive/20" },
+}
+
+export function PedidoStatusBadge({ status }: { status: string }) {
+  const c = pedidoStatusStyles[status] ?? pedidoStatusStyles.BORRADOR
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset",
+        c.cls,
+      )}
+    >
+      <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
+      {c.label}
+    </span>
+  )
+}
+
 const stockConfig: Record<
   StockLevel,
   { label: string; dot: string; text: string; ring: string; bg: string }
