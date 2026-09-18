@@ -63,6 +63,29 @@ export function PedidoStatusBadge({ status }: { status: string }) {
   )
 }
 
+const facturaStatusStyles: Record<string, { label: string; cls: string }> = {
+  BORRADOR: { label: "Borrador", cls: "bg-muted text-muted-foreground ring-border" },
+  EMITIDA: { label: "Emitida", cls: "bg-success/10 text-success ring-success/20" },
+  PAGADA: { label: "Pagada", cls: "bg-primary/10 text-primary ring-primary/20" },
+  VENCIDA: { label: "Vencida", cls: "bg-destructive/10 text-destructive ring-destructive/20" },
+  ANULADA: { label: "Anulada", cls: "bg-muted text-muted-foreground ring-border line-through" },
+}
+
+export function FacturaStatusBadge({ status }: { status: string }) {
+  const c = facturaStatusStyles[status] ?? facturaStatusStyles.BORRADOR
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset",
+        c.cls,
+      )}
+    >
+      <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
+      {c.label}
+    </span>
+  )
+}
+
 const stockConfig: Record<
   StockLevel,
   { label: string; dot: string; text: string; ring: string; bg: string }

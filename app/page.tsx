@@ -5,11 +5,12 @@ import { Sidebar } from "@/components/finanx/sidebar"
 import { ClientsModule } from "@/components/finanx/clients-module"
 import { ProductsModule } from "@/components/finanx/products-module"
 import { OrdersModule } from "@/components/finanx/orders-module"
+import { InvoicesModule } from "@/components/finanx/invoices-module"
 import { ToastProvider } from "@/components/finanx/toast"
 
 function App() {
   const [collapsed, setCollapsed] = useState(false)
-  const [activeModule, setActiveModule] = useState("m3")
+  const [activeModule, setActiveModule] = useState("m4")
 
   const renderModule = () => {
     switch (activeModule) {
@@ -19,6 +20,8 @@ function App() {
         return <ProductsModule />
       case "m3":
         return <OrdersModule />
+      case "m4":
+        return <InvoicesModule />
       default:
         return <ProductsModule />
     }

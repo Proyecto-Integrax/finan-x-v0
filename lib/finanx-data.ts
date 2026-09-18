@@ -469,6 +469,243 @@ export function nextPedidoId(existing: Pedido[]): string {
   return `PED-${String(max + 1).padStart(5, "0")}`
 }
 
+/* ------------------------------------------------------------------ */
+/* MÓDULO 4 · FACTURACIÓN                                              */
+/* ------------------------------------------------------------------ */
+
+/** Reference "today" used for due-date / overdue calculations across the mockup. */
+export const TODAY = "2026-09-18"
+
+export const company = {
+  name: "FINAN-X S.A.S.",
+  nit: "901.555.222-3",
+  address: "Calle 100 #7-33, Torre Empresarial, Piso 14, Bogotá D.C.",
+  phone: "+57 601 743 2200",
+  email: "facturacion@finan-x.co",
+  website: "www.finan-x.co",
+  regime: "Responsable de IVA · Régimen Común",
+}
+
+export type FacturaStatus = "BORRADOR" | "EMITIDA" | "PAGADA" | "VENCIDA" | "ANULADA"
+
+export const facturaStatuses: FacturaStatus[] = [
+  "BORRADOR",
+  "EMITIDA",
+  "PAGADA",
+  "VENCIDA",
+  "ANULADA",
+]
+
+export interface FacturaPayment {
+  id: string
+  date: string
+  method: string
+  reference: string
+  amount: number
+}
+
+export interface Factura {
+  id: string
+  /** Número correlativo, asignado solo al emitir. */
+  number?: string
+  pedidoId: string
+  clientId: string
+  clientName: string
+  clientNit: string
+  clientEmail: string
+  clientAddress: string
+  issueDate: string
+  dueDate: string
+  status: FacturaStatus
+  lines: OrderLine[]
+  payments: FacturaPayment[]
+  cancelReason?: string
+  cancelledAt?: string
+  /** Interés de mora mensual (%). */
+  moraRate: number
+  /** Código de verificación para el QR (CUFE simulado). */
+  verificationCode: string
+}
+
+/** Whole days an invoice is past its due date relative to `TODAY`. */
+export function daysOverdue(dueDate: string, today: string = TODAY): number {
+  const diff = Math.floor(
+    (new Date(today).getTime() - new Date(dueDate).getTime()) / 86_400_000,
+  )
+  return Math.max(0, diff)
+}
+
+/** Accrued late-payment interest for an overdue invoice. */
+export function moraInterest(f: Factura): number {
+  const days = daysOverdue(f.dueDate)
+  if (days <= 0) return 0
+  const dailyRate = f.moraRate / 100 / 30
+  return Math.round(orderTotals(f.lines).total * dailyRate * days)
+}
+
+export function amountPaid(f: Factura): number {
+  return f.payments.reduce((s, p) => s + p.amount, 0)
+}
+
+/** Effective status: escalates EMITIDA → VENCIDA once past due. */
+export function effectiveFacturaStatus(f: Factura): FacturaStatus {
+  if (f.status === "EMITIDA" && daysOverdue(f.dueDate) > 0) return "VENCIDA"
+  return f.status
+}
+
+export function nextFacturaNumber(existing: Factura[]): string {
+  const max = existing.reduce((m, f) => {
+    if (!f.number) return m
+    const n = Number.parseInt(f.number.replace(/\D/g, ""), 10)
+    return Number.isNaN(n) ? m : Math.max(m, n)
+  }, 2043)
+  return `FE-${String(max + 1).padStart(4, "0")}`
+}
+
+function verify(seed: number): string {
+  let s = seed
+  const chars = "0123456789abcdef"
+  let out = ""
+  for (let i = 0; i < 32; i++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff
+    out += chars[s % 16]
+  }
+  return out
+}
+
+export const facturas: Factura[] = [
+  {
+    id: "f1",
+    number: "FE-2044",
+    pedidoId: "PED-00121",
+    clientId: "c2",
+    clientName: "Logística del Pacífico Ltda.",
+    clientNit: "830098765-1",
+    clientEmail: "facturacion@pacifico.com",
+    clientAddress: "Av. 3 Norte #24-46, Cali, Valle del Cauca",
+    issueDate: "2026-09-06",
+    dueDate: "2026-10-06",
+    status: "EMITIDA",
+    moraRate: 2.5,
+    verificationCode: verify(2044),
+    lines: [line("p2", 5), line("p1", 1)],
+    payments: [],
+  },
+  {
+    id: "f2",
+    number: "FE-2039",
+    pedidoId: "PED-00120",
+    clientId: "c5",
+    clientName: "Agroindustrias del Llano S.A.S.",
+    clientNit: "901889002-4",
+    clientEmail: "tesoreria@agrollano.co",
+    clientAddress: "Km 5 vía Puerto López, Villavicencio, Meta",
+    issueDate: "2026-08-29",
+    dueDate: "2026-09-13",
+    status: "PAGADA",
+    moraRate: 2.5,
+    verificationCode: verify(2039),
+    lines: [line("p7", 1)],
+    payments: [
+      {
+        id: "pay-1",
+        date: "2026-09-10",
+        method: "Transferencia bancaria",
+        reference: "TRX-889201",
+        amount: 1500000,
+      },
+    ],
+  },
+  {
+    id: "f3",
+    number: "FE-2031",
+    pedidoId: "PED-00118",
+    clientId: "c4",
+    clientName: "Tecnología Global Corp.",
+    clientNit: "800567123-9",
+    clientEmail: "invoices@techglobal.com",
+    clientAddress: "Calle 26 #92-32, Zona Franca, Bogotá D.C.",
+    issueDate: "2026-08-15",
+    dueDate: "2026-09-14",
+    status: "PAGADA",
+    moraRate: 2.5,
+    verificationCode: verify(2031),
+    lines: [line("p6", 2), line("p5", 6)],
+    payments: [
+      {
+        id: "pay-2",
+        date: "2026-08-30",
+        method: "Transferencia bancaria",
+        reference: "TRX-874510",
+        amount: 1500000,
+      },
+      {
+        id: "pay-3",
+        date: "2026-09-12",
+        method: "PSE",
+        reference: "PSE-556012",
+        amount: 1857900,
+      },
+    ],
+  },
+  {
+    id: "f4",
+    number: "FE-2028",
+    pedidoId: "PED-00115",
+    clientId: "c1",
+    clientName: "Comercializadora Andina S.A.S.",
+    clientNit: "900123456-7",
+    clientEmail: "pagos@andina.co",
+    clientAddress: "Calle 100 #19-54, Oficina 802, Bogotá D.C.",
+    issueDate: "2026-07-18",
+    dueDate: "2026-08-17",
+    status: "EMITIDA",
+    moraRate: 2.5,
+    verificationCode: verify(2028),
+    lines: [line("p1", 1), line("p4", 2)],
+    payments: [],
+  },
+  {
+    id: "f5",
+    number: "FE-2015",
+    pedidoId: "PED-00108",
+    clientId: "c3",
+    clientName: "Distribuciones El Roble S.A.",
+    clientNit: "901456789-3",
+    clientEmail: "contabilidad@elroble.co",
+    clientAddress: "Carrera 43A #1-50, Torre Sur, Medellín, Antioquia",
+    issueDate: "2026-06-02",
+    dueDate: "2026-07-02",
+    status: "ANULADA",
+    cancelReason: "Error en los datos tributarios del cliente. Se reemplaza por FE-2016.",
+    cancelledAt: "2026-06-03",
+    moraRate: 2.5,
+    verificationCode: verify(2015),
+    lines: [line("p3", 4)],
+    payments: [],
+  },
+  {
+    id: "f6",
+    pedidoId: "PED-00122",
+    clientId: "c4",
+    clientName: "Tecnología Global Corp.",
+    clientNit: "800567123-9",
+    clientEmail: "invoices@techglobal.com",
+    clientAddress: "Calle 26 #92-32, Zona Franca, Bogotá D.C.",
+    issueDate: TODAY,
+    dueDate: "2026-10-18",
+    status: "BORRADOR",
+    moraRate: 2.5,
+    verificationCode: verify(9001),
+    lines: [line("p4", 3), line("p6", 1)],
+    payments: [],
+  },
+]
+
+export function makeVerificationCode(seed: number): string {
+  return verify(seed)
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
